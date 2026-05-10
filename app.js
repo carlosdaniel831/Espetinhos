@@ -5,6 +5,7 @@ const produtos = {
   boi:{ nome:'🐄 Espeto de Boi', preco:7 },
   frango:{ nome:'🍗 Espeto de Frango', preco:7 },
   linguica:{ nome:'🌭 Espeto de Linguiça', preco:7 },
+  refri1:{ nome:'🥤 Guaraná 1L', preco:7 },
   refri15:{ nome:'🥤 Refrigerante 1,5L', preco:13 },
   refri2:{ nome:'🥤 Refrigerante 2L', preco:15 },
   refriLata:{ nome:'🥤 Refrigerante Lata', preco:5 }
@@ -69,7 +70,7 @@ function iniciarProdutos(){
           <button class="qty-btn plus" onclick="alterar('${id}',1)">+</button>
         </div>
       </div>
-      ${id.includes('refri') ? `
+      ${id.includes('refri') && id !== 'refri1' ? `
         <select class="refri-select" id="sabor-${id}">
           <option value="">Escolha o sabor</option>
           ${sabores.map(s=>`<option value="${s}">${s}</option>`).join('')}
@@ -100,7 +101,7 @@ function finalizarPedido(){
   for(const [id,qtd] of Object.entries(carrinho)){
     if(qtd > 0){
       let nome = produtos[id].nome;
-      if(id.includes('refri')){
+      if(id.includes('refri') && id !== 'refri1'){
         const sabor = document.getElementById(`sabor-${id}`).value;
         if(!sabor){ toast('Escolha o sabor do refrigerante'); return; }
         nome += ` (${sabor})`;
