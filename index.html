@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Espeto & Baião</title>
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Syne:wght@700;800&display=swap"
+    rel="stylesheet"
+  >
+
+</head>
+
+<body>
+
+<!-- HEADER -->
+
+<header class="header">
+
+  <div class="logo-wrap">
+
+    <div class="logo">
+      🔥
+    </div>
+
+    <div>
+
+      <h1>
+        Espeto <span>&</span> Baião
+      </h1>
+
+      <p>
+        Sistema Profissional de Pedidos
+      </p>
+
+    </div>
+
+  </div>
+
+  <div class="clock" id="clock">
+    00:00
+  </div>
+
+</header>
+
+<!-- TABS -->
+
+<nav class="tabs">
+
+  <button
+    class="tab active"
+    onclick="goTab('novo',event)"
+  >
+    🛒 Novo
+  </button>
+
+  <button
+    class="tab"
+    onclick="goTab('pedidos',event)"
+  >
+    📋 Pedidos
+  </button>
+
+  <button
+    class="tab"
+    onclick="goTab('resumo',event)"
+  >
+    📊 Resumo
+  </button>
+
+</nav>
+
+<!-- NOVO PEDIDO -->
+
+<section
+  class="panel active"
+  id="panel-novo"
+>
+
+  <div class="hero-card">
+
+    <div>
+      <small>Pedido Atual</small>
+      <h2 id="pedidoNumero">
+        #001
+      </h2>
+    </div>
+
+    <div>
+      <small>Total</small>
+      <h2 id="total">
+        R$ 0,00
+      </h2>
+    </div>
+
+  </div>
+
+  <div class="card">
+
+    <h2>
+      👤 Cliente
+    </h2>
+
+    <input
+      type="text"
+      id="cliente"
+      placeholder="Nome do cliente"
+    >
+
+    <input
+      type="text"
+      id="obs"
+      placeholder="Observação do pedido"
+    >
+
+  </div>
+
+  <div class="card">
+
+    <div class="title-row">
+
+      <h2>
+        🍛 Produtos
+      </h2>
+
+      <span class="mini-badge">
+        Cardápio
+      </span>
+
+    </div>
+
+    <div id="products"></div>
+
+  </div>
+
+  <button
+    class="btn-primary"
+    onclick="finalizarPedido()"
+  >
+    Finalizar Pedido
+  </button>
+
+</section>
+
+<!-- PEDIDOS -->
+
+<section
+  class="panel"
+  id="panel-pedidos"
+>
+
+  <div class="card">
+
+    <input
+      type="text"
+      id="search"
+      placeholder="Pesquisar cliente..."
+      oninput="renderPedidos()"
+    >
+
+  </div>
+
+  <div id="listaPedidos"></div>
+
+</section>
+
+<!-- RESUMO -->
+
+<section
+  class="panel"
+  id="panel-resumo"
+>
+
+  <div class="stats-grid">
+
+    <div class="stat-card">
+
+      <small>
+        💰 Faturamento
+      </small>
+
+      <h2 id="fatTotal">
+        R$ 0,00
+      </h2>
+
+    </div>
+
+    <div class="stat-card">
+
+      <small>
+        📋 Pedidos
+      </small>
+
+      <h2 id="pedidosTotal">
+        0
+      </h2>
+
+    </div>
+
+    <div class="stat-card">
+
+      <small>
+        💳 Pagos
+      </small>
+
+      <h2 id="pagosTotal">
+        0
+      </h2>
+
+    </div>
+
+    <div class="stat-card">
+
+      <small>
+        ✅ Entregues
+      </small>
+
+      <h2 id="entreguesTotal">
+        0
+      </h2>
+
+    </div>
+
+  </div>
+
+</section>
+
+<!-- TOAST -->
+
+<div
+  class="toast"
+  id="toast"
+></div>
+
+<script src="app.js"></script>
+
+</body>
+</html>
