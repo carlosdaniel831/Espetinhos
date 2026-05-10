@@ -69,6 +69,13 @@
     <h2>👤 Cliente</h2>
     <input type="text" id="cliente" placeholder="Nome do cliente">
     <input type="text" id="obs" placeholder="Observação do pedido">
+    <select id="pagamento" class="refri-select" style="margin-top:0;">
+      <option value="">💳 Forma de pagamento</option>
+      <option value="Dinheiro">💵 Dinheiro</option>
+      <option value="Pix">📱 Pix</option>
+      <option value="Crédito">💳 Crédito</option>
+      <option value="Débito">💳 Débito</option>
+    </select>
   </div>
   <div class="card">
     <div class="title-row">
@@ -94,10 +101,16 @@
     <div class="stat-card"><small>💳 Pagos</small><h2 id="pagosTotal">0</h2></div>
     <div class="stat-card"><small>✅ Entregues</small><h2 id="entreguesTotal">0</h2></div>
   </div>
+
+  <div class="card" style="margin-top:18px;">
+    <h2 style="margin-bottom:14px;">💳 Por Pagamento</h2>
+    <div id="resumoPagamento"><p style="color:#B58B67;font-size:.85rem;">Nenhum dado ainda</p></div>
+  </div>
+
+  <button onclick="zerarDia()" style="width:100%;padding:18px;border:none;border-radius:18px;background:rgba(231,76,60,.15);color:#E74C3C;font-weight:900;font-size:1rem;cursor:pointer;margin-top:8px;border:1px solid rgba(231,76,60,.3);">🗑 ZERAR PEDIDOS DO DIA</button>
 </section>
 
 <div class="toast" id="toast"></div>
-
 <script src="app.js"></script>
 </body>
 </html>
