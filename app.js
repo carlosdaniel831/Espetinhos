@@ -96,6 +96,10 @@ function finalizarPedido(){
   const cliente = document.getElementById('cliente').value.trim();
   if(!cliente){ toast('Informe o cliente'); return; }
   if(!Object.values(carrinho).some(q=>q>0)){ toast('Adicione itens'); return; }
+
+  const pagamento = document.getElementById('pagamento').value;
+  if(!pagamento){ toast('Informe a forma de pagamento'); return; }
+
   const itens = {};
   let total = 0;
   for(const [id,qtd] of Object.entries(carrinho)){
@@ -112,6 +116,7 @@ function finalizarPedido(){
   }
   db.ref('pedidos').push({
     id: proximoNumero, cliente, itens, total,
+    pagamento,
     pago: false, entregue: false,
     obs: document.getElementById('obs').value,
     hora: new Date().toLocaleTimeString('pt-BR',{ hour:'2-digit', minute:'2-digit' }),
@@ -137,7 +142,8 @@ function renderPedidos(){
         </div>
         <div>
           ${p.entregue ? '✅ Entregue' : '⏳ Pendente'}<br><br>
-          ${p.pago ? '💰 Pago' : '💸 Não Pago'}
+          ${p.pago ? '💰 Pago' : '💸 Não Pago'}<br><br>
+          ${p.pagamento ? `💳 ${p.pagamento}` : ''}
         </div>
       </div>
       <div class="order-items">
@@ -169,17 +175,43 @@ function excluir(key){
   db.ref('pedidos/'+key).remove().then(()=>toast('Pedido excluído'));
 }
 
+function zerarDia(){
+  if(!db) return;
+  if(!confirm('Zerar TODOS os pedidos do dia? Essa ação não pode ser desfeita!')) return;
+  db.ref('pedidos').remove().then(()=>toast('Pedidos zerados!'));
+}
+
 function renderResumo(){
   let faturamento=0, pagos=0, entregues=0;
+  const porPagamento = {};
   Object.values(pedidos).forEach(p => {
     faturamento += p.total||0;
     if(p.pago) pagos++;
     if(p.entregue) entregues++;
+    if(p.pagamento){
+      if(!porPagamento[p.pagamento]) porPagamento[p.pagamento] = 0;
+      porPagamento[p.pagamento] += p.total||0;
+    }
   });
   document.getElementById('fatTotal').textContent = moeda(faturamento);
   document.getElementById('pedidosTotal').textContent = Object.keys(pedidos).length;
   document.getElementById('pagosTotal').textContent = pagos;
   document.getElementById('entreguesTotal').textContent = entregues;
+
+  // Resumo por forma de pagamento
+  const resumoPag = document.getElementById('resumoPagamento');
+  if(resumoPag){
+    if(Object.keys(porPagamento).length === 0){
+      resumoPag.innerHTML = '<p style="color:#B58B67;font-size:.85rem;">Nenhum dado ainda</p>';
+    } else {
+      resumoPag.innerHTML = Object.entries(porPagamento).map(([forma, valor]) => `
+        <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.95rem;">
+          <span>💳 ${forma}</span>
+          <strong style="color:#FFB000;">${moeda(valor)}</strong>
+        </div>
+      `).join('');
+    }
+  }
 }
 
 function limpar(){
@@ -188,6 +220,7 @@ function limpar(){
   atualizarTotal();
   document.getElementById('cliente').value='';
   document.getElementById('obs').value='';
+  document.getElementById('pagamento').value='';
 }
 
 function moeda(v){ return 'R$ '+v.toFixed(2).replace('.',','); }
