@@ -1,251 +1,103 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Espeto & Baião</title>
-
-  <link
-    rel="stylesheet"
-    href="style.css"
-  >
-
-  <link
-    href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Syne:wght@700;800&display=swap"
-    rel="stylesheet"
-  >
-
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
-
 <body>
 
-<!-- HEADER -->
+<div id="setupOverlay" style="display:none;position:fixed;inset:0;background:#110C06;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#231609;border-radius:28px;padding:28px 22px;width:100%;max-width:460px;border:1px solid rgba(255,176,0,.15);">
+    <div style="text-align:center;font-family:'Syne',sans-serif;font-size:2rem;color:#FFB000;margin-bottom:6px;">🔥 Espeto & Baião</div>
+    <div style="text-align:center;color:#B58B67;font-size:.85rem;margin-bottom:22px;">Configuração do banco de dados em nuvem</div>
+    <div style="background:rgba(255,176,0,.08);border-left:3px solid #FFB000;border-radius:0 12px 12px 0;padding:12px 14px;margin-bottom:12px;font-size:.82rem;line-height:1.6;color:#d3b18b;">
+      <strong style="color:#FFB000;">Passo 1:</strong> Acesse <a href="https://console.firebase.google.com" target="_blank" style="color:#FF5A1F;">console.firebase.google.com</a> e crie um projeto gratuito.
+    </div>
+    <div style="background:rgba(255,176,0,.08);border-left:3px solid #FFB000;border-radius:0 12px 12px 0;padding:12px 14px;margin-bottom:12px;font-size:.82rem;line-height:1.6;color:#d3b18b;">
+      <strong style="color:#FFB000;">Passo 2:</strong> Vá em <strong>Realtime Database → Criar banco de dados</strong>. Escolha <strong>Modo de teste</strong>. Copie a URL gerada.
+    </div>
+    <div style="background:rgba(255,176,0,.08);border-left:3px solid #FFB000;border-radius:0 12px 12px 0;padding:12px 14px;margin-bottom:20px;font-size:.82rem;line-height:1.6;color:#d3b18b;">
+      <strong style="color:#FFB000;">Passo 3:</strong> Cole a URL abaixo e clique em Conectar.
+    </div>
+    <label style="font-size:.75rem;font-weight:800;color:#B58B67;text-transform:uppercase;letter-spacing:1px;">URL do Firebase</label>
+    <input type="text" id="inputFirebaseUrl" placeholder="https://seu-projeto-default-rtdb.firebaseio.com" style="margin-top:8px;">
+    <button onclick="salvarConfigFirebase()" style="width:100%;padding:18px;border:none;border-radius:18px;background:linear-gradient(135deg,#FF5A1F,#D83D00);color:white;font-weight:900;font-size:1rem;cursor:pointer;margin-top:4px;">CONECTAR AO BANCO DE DADOS</button>
+    <div style="font-size:.75rem;color:#5a4030;text-align:center;margin-top:14px;">A URL fica salva neste dispositivo. Cada pessoa configura uma vez.</div>
+  </div>
+</div>
 
 <header class="header">
-
   <div class="logo-wrap">
-
-    <div class="logo">
-      🔥
-    </div>
-
+    <div class="logo">🔥</div>
     <div>
-
-      <h1>
-        Espeto <span>&</span> Baião
-      </h1>
-
-      <p>
-        Sistema Profissional de Pedidos
-      </p>
-
+      <h1>Espeto <span>&</span> Baião</h1>
+      <p>Sistema Profissional de Pedidos</p>
     </div>
-
   </div>
-
-  <div class="clock" id="clock">
-    00:00
+  <div style="display:flex;align-items:center;gap:14px;">
+    <div style="display:flex;align-items:center;gap:6px;font-size:.75rem;color:#B58B67;">
+      <div id="statusDot" style="width:8px;height:8px;border-radius:50%;background:#E74C3C;"></div>
+      <span id="statusTexto">Offline</span>
+    </div>
+    <div class="clock" id="clock">00:00</div>
   </div>
-
 </header>
 
-<!-- TABS -->
-
 <nav class="tabs">
-
-  <button
-    class="tab active"
-    onclick="goTab('novo',event)"
-  >
-    🛒 Novo
-  </button>
-
-  <button
-    class="tab"
-    onclick="goTab('pedidos',event)"
-  >
-    📋 Pedidos
-  </button>
-
-  <button
-    class="tab"
-    onclick="goTab('resumo',event)"
-  >
-    📊 Resumo
-  </button>
-
+  <button class="tab active" onclick="goTab('novo',event)">🛒 Novo</button>
+  <button class="tab" onclick="goTab('pedidos',event)">📋 Pedidos</button>
+  <button class="tab" onclick="goTab('resumo',event)">📊 Resumo</button>
 </nav>
 
-<!-- NOVO PEDIDO -->
-
-<section
-  class="panel active"
-  id="panel-novo"
->
-
+<section class="panel active" id="panel-novo">
   <div class="hero-card">
-
     <div>
       <small>Pedido Atual</small>
-      <h2 id="pedidoNumero">
-        #001
-      </h2>
+      <h2 id="pedidoNumero">#001</h2>
     </div>
-
     <div>
       <small>Total</small>
-      <h2 id="total">
-        R$ 0,00
-      </h2>
+      <h2 id="total">R$ 0,00</h2>
     </div>
-
   </div>
-
   <div class="card">
-
-    <h2>
-      👤 Cliente
-    </h2>
-
-    <input
-      type="text"
-      id="cliente"
-      placeholder="Nome do cliente"
-    >
-
-    <input
-      type="text"
-      id="obs"
-      placeholder="Observação do pedido"
-    >
-
+    <h2>👤 Cliente</h2>
+    <input type="text" id="cliente" placeholder="Nome do cliente">
+    <input type="text" id="obs" placeholder="Observação do pedido">
   </div>
-
   <div class="card">
-
     <div class="title-row">
-
-      <h2>
-        🍛 Produtos
-      </h2>
-
-      <span class="mini-badge">
-        Cardápio
-      </span>
-
+      <h2>🍛 Produtos</h2>
+      <span class="mini-badge">Cardápio</span>
     </div>
-
     <div id="products"></div>
-
   </div>
-
-  <button
-    class="btn-primary"
-    onclick="finalizarPedido()"
-  >
-    Finalizar Pedido
-  </button>
-
+  <button class="btn-primary" onclick="finalizarPedido()">Finalizar Pedido</button>
 </section>
 
-<!-- PEDIDOS -->
-
-<section
-  class="panel"
-  id="panel-pedidos"
->
-
+<section class="panel" id="panel-pedidos">
   <div class="card">
-
-    <input
-      type="text"
-      id="search"
-      placeholder="Pesquisar cliente..."
-      oninput="renderPedidos()"
-    >
-
+    <input type="text" id="search" placeholder="Pesquisar cliente..." oninput="renderPedidos()">
   </div>
-
   <div id="listaPedidos"></div>
-
 </section>
 
-<!-- RESUMO -->
-
-<section
-  class="panel"
-  id="panel-resumo"
->
-
+<section class="panel" id="panel-resumo">
   <div class="stats-grid">
-
-    <div class="stat-card">
-
-      <small>
-        💰 Faturamento
-      </small>
-
-      <h2 id="fatTotal">
-        R$ 0,00
-      </h2>
-
-    </div>
-
-    <div class="stat-card">
-
-      <small>
-        📋 Pedidos
-      </small>
-
-      <h2 id="pedidosTotal">
-        0
-      </h2>
-
-    </div>
-
-    <div class="stat-card">
-
-      <small>
-        💳 Pagos
-      </small>
-
-      <h2 id="pagosTotal">
-        0
-      </h2>
-
-    </div>
-
-    <div class="stat-card">
-
-      <small>
-        ✅ Entregues
-      </small>
-
-      <h2 id="entreguesTotal">
-        0
-      </h2>
-
-    </div>
-
+    <div class="stat-card"><small>💰 Faturamento</small><h2 id="fatTotal">R$ 0,00</h2></div>
+    <div class="stat-card"><small>📋 Pedidos</small><h2 id="pedidosTotal">0</h2></div>
+    <div class="stat-card"><small>💳 Pagos</small><h2 id="pagosTotal">0</h2></div>
+    <div class="stat-card"><small>✅ Entregues</small><h2 id="entreguesTotal">0</h2></div>
   </div>
-
 </section>
 
-<!-- TOAST -->
-
-<div
-  class="toast"
-  id="toast"
-></div>
+<div class="toast" id="toast"></div>
 
 <script src="app.js"></script>
-
 </body>
 </html>
