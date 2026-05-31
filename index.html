@@ -12,12 +12,14 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
+
 <body>
 
 <!-- SETUP OVERLAY -->
 <div id="setupOverlay" style="display:none;position:fixed;inset:0;background:#110C06;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;">
+
   <div style="background:#231609;border-radius:28px;padding:28px 22px;width:100%;max-width:460px;border:1px solid rgba(255,176,0,.15);">
-    
+
     <div style="text-align:center;font-family:'Syne',sans-serif;font-size:2rem;color:#FFB000;margin-bottom:6px;">
       🔥 Espeto & Baião
     </div>
@@ -38,7 +40,8 @@
     <div style="background:rgba(255,176,0,.08);border-left:3px solid #FFB000;border-radius:0 12px 12px 0;padding:12px 14px;margin-bottom:12px;font-size:.82rem;line-height:1.6;color:#d3b18b;">
       <strong style="color:#FFB000;">Passo 2:</strong>
       Vá em <strong>Realtime Database → Criar banco de dados</strong>.
-      Escolha <strong>Modo de teste</strong>. Copie a URL gerada.
+      Escolha <strong>Modo de teste</strong>.
+      Copie a URL gerada.
     </div>
 
     <div style="background:rgba(255,176,0,.08);border-left:3px solid #FFB000;border-radius:0 12px 12px 0;padding:12px 14px;margin-bottom:20px;font-size:.82rem;line-height:1.6;color:#d3b18b;">
@@ -78,34 +81,52 @@
 
     <div class="modal-header">
       <h2 id="modalTitulo">✏️ Editar Pedido</h2>
-      <button class="modal-close" onclick="fecharModal()">✕</button>
+
+      <button class="modal-close" onclick="fecharModal()">
+        ✕
+      </button>
     </div>
 
     <div class="modal-section">
       <label class="modal-label">👤 Cliente</label>
-      <input type="text" id="editCliente" placeholder="Nome do cliente">
+
+      <input
+        type="text"
+        id="editCliente"
+        placeholder="Nome do cliente"
+      >
     </div>
 
     <div class="modal-section">
       <label class="modal-label">📝 Observação</label>
-      <input type="text" id="editObs" placeholder="Observação do pedido">
+
+      <input
+        type="text"
+        id="editObs"
+        placeholder="Observação do pedido"
+      >
     </div>
 
     <div class="modal-section">
       <label class="modal-label">💳 Forma de Pagamento</label>
 
       <select id="editPagamento" class="refri-select" style="margin-top:8px;">
+
         <option value="">⏳ Não informar agora</option>
         <option value="Dinheiro">💵 Dinheiro</option>
         <option value="Pix">📱 Pix</option>
         <option value="Crédito">💳 Crédito</option>
         <option value="Débito">💳 Débito</option>
+
       </select>
     </div>
 
     <div class="modal-section">
+
       <label class="modal-label">🍛 Itens do Pedido</label>
+
       <div id="editProdutos"></div>
+
     </div>
 
     <div class="modal-footer">
@@ -113,12 +134,16 @@
       <div class="modal-total-wrap">
         <span style="color:#B58B67;">Total</span>
 
-        <span id="editTotal" style="color:#FFB000;font-size:1.4rem;font-weight:900;">
+        <span
+          id="editTotal"
+          style="color:#FFB000;font-size:1.4rem;font-weight:900;"
+        >
           R$ 0,00
         </span>
       </div>
 
       <div style="display:flex;gap:10px;margin-top:14px;">
+
         <button class="modal-cancel-btn" onclick="fecharModal()">
           Cancelar
         </button>
@@ -126,12 +151,11 @@
         <button class="modal-save-btn" onclick="salvarEdicao()">
           Salvar Alterações
         </button>
-      </div>
 
+      </div>
     </div>
 
   </div>
-
 </div>
 
 <!-- HEADER -->
@@ -151,8 +175,14 @@
   <div style="display:flex;align-items:center;gap:14px;">
 
     <div style="display:flex;align-items:center;gap:6px;font-size:.75rem;color:#B58B67;">
-      <div id="statusDot" style="width:8px;height:8px;border-radius:50%;background:#E74C3C;"></div>
+
+      <div
+        id="statusDot"
+        style="width:8px;height:8px;border-radius:50%;background:#E74C3C;"
+      ></div>
+
       <span id="statusTexto">Offline</span>
+
     </div>
 
     <div class="clock" id="clock">00:00</div>
@@ -199,16 +229,26 @@
 
     <h2>👤 Cliente</h2>
 
-    <input type="text" id="cliente" placeholder="Nome do cliente">
+    <input
+      type="text"
+      id="cliente"
+      placeholder="Nome do cliente"
+    >
 
-    <input type="text" id="obs" placeholder="Observação do pedido">
+    <input
+      type="text"
+      id="obs"
+      placeholder="Observação do pedido"
+    >
 
     <select id="pagamento" class="refri-select" style="margin-top:0;">
+
       <option value="">⏳ Não informar agora</option>
       <option value="Dinheiro">💵 Dinheiro</option>
       <option value="Pix">📱 Pix</option>
       <option value="Crédito">💳 Crédito</option>
       <option value="Débito">💳 Débito</option>
+
     </select>
 
   </div>
@@ -216,8 +256,13 @@
   <div class="card">
 
     <div class="title-row">
+
       <h2>🍛 Produtos</h2>
-      <span class="mini-badge">Cardápio</span>
+
+      <span class="mini-badge">
+        Cardápio
+      </span>
+
     </div>
 
     <div id="products"></div>
@@ -234,12 +279,14 @@
 <section class="panel" id="panel-pedidos">
 
   <div class="card">
+
     <input
       type="text"
       id="search"
       placeholder="Pesquisar cliente..."
       oninput="renderPedidos()"
     >
+
   </div>
 
   <div id="listaPedidos"></div>
@@ -275,7 +322,9 @@
 
   <div class="card" style="margin-top:18px;">
 
-    <h2 style="margin-bottom:14px;">💳 Por Pagamento</h2>
+    <h2 style="margin-bottom:14px;">
+      💳 Por Pagamento
+    </h2>
 
     <div id="resumoPagamento">
       <p style="color:#B58B67;font-size:.85rem;">
@@ -288,8 +337,13 @@
   <div class="card" style="margin-top:4px;">
 
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+
       <h2>🥤 Refrigerantes</h2>
-      <span class="mini-badge">Prestação de contas</span>
+
+      <span class="mini-badge">
+        Prestação de contas
+      </span>
+
     </div>
 
     <div id="resumoRefri">
