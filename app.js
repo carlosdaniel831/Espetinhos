@@ -373,15 +373,16 @@ function renderResumo(){
 
     // Varrer itens do pedido e identificar refrigerantes
     Object.entries(p.itens || {}).forEach(([nomeItem, qtd]) => {
-      // Verifica se o item corresponde a algum produto refri
-      const isRefri = idsRefri.some(rid => nomeItem.startsWith(produtos[rid].nome));
+      const nomeNorm = nomeItem.toLowerCase();
+      const isRefri = nomeNorm.includes('refrigerante') || nomeNorm.includes('guaraná') || nomeNorm.includes('guarana');
       if(!isRefri) return;
 
-      // Descobre o preço pelo produto correspondente
+      // Descobre o preço pelo tamanho/tipo mencionado no nome
       let precoUnit = 0;
-      for(const rid of idsRefri){
-        if(nomeItem.startsWith(produtos[rid].nome)){ precoUnit = produtos[rid].preco; break; }
-      }
+      if(nomeNorm.includes('2l'))                                       precoUnit = 15;
+      else if(nomeNorm.includes('1,5l') || nomeNorm.includes('1.5l'))  precoUnit = 13;
+      else if(nomeNorm.includes('lata'))                                precoUnit = 5;
+      else                                                              precoUnit = 7;
 
       if(!refriVendidos[nomeItem]) refriVendidos[nomeItem] = { qtd:0, total:0 };
       refriVendidos[nomeItem].qtd   += qtd;
