@@ -395,7 +395,7 @@ function zerarDia(){
     .then(() => { toast('Pedidos zerados!'); });
 }
 
-/* ───── RESUMO ─────────────────────────────────────────── */
+/* ───── RESUMO (SISTEMA DE FILTRO ATUALIZADO) ──────────── */
 function renderResumo(){
   let faturamento = 0;
   let pagos = 0;
@@ -413,7 +413,8 @@ function renderResumo(){
 
     if(p.itens){
       Object.entries(p.itens).forEach(([nomeItem, qtd]) => {
-        if(nomeItem.includes('🥤')){
+        // CORREÇÃO: Filtra verificando se no nome do item existe o texto "Refrigerante" ou "Guaraná"
+        if(nomeItem.includes('Refrigerante') || nomeItem.includes('Guaraná')){
           contagemRefri[nomeItem] = (contagemRefri[nomeItem] || 0) + qtd;
         }
       });
