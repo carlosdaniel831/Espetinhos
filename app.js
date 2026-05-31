@@ -121,8 +121,8 @@ function renderCardapio(carrinhoLocal, fnAlterar, isModal){
     }).join('');
 
     return `
-      <div style="margin-bottom:6px;">
-        <div style="font-size:.72rem;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin:18px 0 10px;">${label}</div>
+      <div>
+        <div class="cat-label">${label}</div>
         ${items}
       </div>
     `;
