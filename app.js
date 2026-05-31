@@ -13,7 +13,6 @@ const produtos = {
 };
 
 const sabores = ['Coca-Cola','Fanta','Guaraná','Cajuína'];
-const idsRefri = ['refri1','refri15','refri2','refriLata'];
 
 /* ───── ESTADO ─────────────────────────────────────────── */
 let carrinho = {};
@@ -22,14 +21,15 @@ Object.keys(produtos).forEach(p => { carrinho[p] = 0; });
 let pedidos = {};
 let proximoNumero = 1;
 let db = null;
+
+// Estado do modal de edição
 let editKey = null;
 let editCarrinho = {};
-let filtroAtivo = 'todos';
 
 /* ───── FIREBASE ───────────────────────────────────────── */
 function salvarConfigFirebase(){
   const url = document.getElementById('inputFirebaseUrl').value.trim();
-  if(!url || !url.includes('firebase')){ toast('URL inválida', 'error'); return; }
+  if(!url || !url.includes('firebase')){ toast('URL inválida', true); return; }
   localStorage.setItem('firebase_url', url);
   document.getElementById('setupOverlay').style.display = 'none';
   iniciarFirebase(url);
@@ -42,9 +42,8 @@ function iniciarFirebase(url){
 
     db.ref('.info/connected').on('value', snap => {
       const ok = snap.val() === true;
-      const dot = document.getElementById('statusDot');
+      document.getElementById('statusDot').style.background = ok ? '#21C45D' : '#E74C3C';
       document.getElementById('statusTexto').textContent = ok ? 'Online' : 'Offline';
-      if(ok){ dot.classList.add('online'); } else { dot.classList.remove('online'); }
     });
 
     db.ref('pedidos').on('value', snap => {
@@ -53,10 +52,9 @@ function iniciarFirebase(url){
       renderPedidos();
       renderResumo();
       atualizarNumPedido();
-      atualizarBadge();
     });
   } catch(e){
-    toast('Erro ao conectar', 'error');
+    toast('Erro ao conectar', true);
     console.error(e);
   }
 }
@@ -70,62 +68,49 @@ function atualizarNumPedido(){
   document.getElementById('pedidoNumero').textContent = '#' + String(proximoNumero).padStart(3,'0');
 }
 
-function atualizarBadge(){
-  const pendentes = Object.values(pedidos).filter(p => !p.entregue).length;
-  const badge = document.getElementById('badgePendentes');
-  if(pendentes > 0){
-    badge.textContent = pendentes;
-    badge.style.display = 'flex';
-  } else {
-    badge.style.display = 'none';
-  }
-}
-
 /* ───── CARDÁPIO ───────────────────────────────────────── */
 function iniciarProdutos(){
   document.getElementById('products').innerHTML = renderCardapio(carrinho, 'alterar', false);
 }
 
+/**
+ * Renderiza os cards de produto de forma reutilizável.
+ * @param {Object} carrinhoLocal  - objeto { prodId: qtd }
+ * @param {string} fnAlterar      - nome da função JS chamada pelos botões
+ * @param {boolean} isModal       - true = dentro do modal de edição
+ */
 function renderCardapio(carrinhoLocal, fnAlterar, isModal){
   return Object.entries(produtos).map(([id, p]) => {
     const qtd = carrinhoLocal[id] || 0;
     const prefix = isModal ? 'edit-' : '';
     return `
-      <div class="product ${qtd > 0 ? 'has-item' : ''}" id="${prefix}prod-${id}">
+      <div class="product">
         <div class="product-top">
-          <div>
-            <div class="product-name">${p.nome}</div>
-            <div class="product-price">${moeda(p.preco)}</div>
+          <div class="product-info">
+            <strong>${p.nome}</strong>
+            <p>${moeda(p.preco)}</p>
           </div>
           <div class="qty-wrap">
-            <button class="qty-btn minus" onclick="${fnAlterar}('${id}',-1)">−</button>
+            <button class="qty-btn minus" onclick="${fnAlterar}('${id}',-1)">-</button>
             <div class="qty-number" id="${prefix}q-${id}">${qtd}</div>
             <button class="qty-btn plus"  onclick="${fnAlterar}('${id}',1)">+</button>
           </div>
         </div>
         ${id.includes('refri') && id !== 'refri1' ? `
-          <select class="select-field" id="${prefix}sabor-${id}" style="margin-top:12px;">
+          <select class="refri-select" id="${prefix}sabor-${id}">
             <option value="">Escolha o sabor</option>
             ${sabores.map(s=>`<option value="${s}">${s}</option>`).join('')}
           </select>` : ''}
-      </div>`;
+      </div>
+    `;
   }).join('');
 }
 
 /* ───── NOVO PEDIDO ────────────────────────────────────── */
 function alterar(id, valor){
   carrinho[id] = Math.max(0, (carrinho[id] || 0) + valor);
-  const el = document.getElementById(`q-${id}`);
-  if(el) el.textContent = carrinho[id];
-
-  // Destaque visual no card
-  const card = document.getElementById(`prod-${id}`);
-  if(card){
-    card.classList.toggle('has-item', carrinho[id] > 0);
-  }
-
+  document.getElementById(`q-${id}`).textContent = carrinho[id];
   atualizarTotal();
-  atualizarCartCounter();
 }
 
 function atualizarTotal(){
@@ -134,29 +119,20 @@ function atualizarTotal(){
   document.getElementById('total').textContent = moeda(total);
 }
 
-function atualizarCartCounter(){
-  const total = Object.values(carrinho).reduce((a,b) => a+b, 0);
-  const counter = document.getElementById('cartCounter');
-  const qtdEl   = document.getElementById('cartQtd');
-  if(counter && qtdEl){
-    qtdEl.textContent = total;
-    counter.style.display = total > 0 ? 'block' : 'none';
-  }
-}
-
 function finalizarPedido(){
-  if(!db){ toast('Banco não conectado!', 'error'); return; }
+  if(!db){ toast('Banco não conectado!', true); return; }
 
   const cliente = document.getElementById('cliente').value.trim();
-  if(!cliente){ toast('Informe o nome do cliente', 'error'); return; }
+  if(!cliente){ toast('Informe o nome do cliente', true); return; }
 
   if(!Object.values(carrinho).some(q => q > 0)){
-    toast('Adicione pelo menos 1 item', 'error'); return;
+    toast('Adicione pelo menos 1 item', true); return;
   }
 
   const pagamento = document.getElementById('pagamento').value;
+
   const { itens, total, erro } = montarItens(carrinho, false);
-  if(erro){ toast(erro, 'error'); return; }
+  if(erro){ toast(erro, true); return; }
 
   db.ref('pedidos').push({
     id:        proximoNumero,
@@ -170,10 +146,14 @@ function finalizarPedido(){
     hora:      new Date().toLocaleTimeString('pt-BR',{ hour:'2-digit', minute:'2-digit' }),
     timestamp: Date.now()
   })
-  .then(() => { limpar(); toast('Pedido criado!', 'success'); })
-  .catch(() => toast('Erro ao salvar', 'error'));
+  .then(() => { limpar(); toast('✅ Pedido criado!'); })
+  .catch(() => toast('Erro ao salvar', true));
 }
 
+/**
+ * Transforma o carrinho em objeto de itens { nome: qtd } e calcula total.
+ * Retorna { itens, total, erro }
+ */
 function montarItens(carrinhoLocal, isModal){
   const prefix = isModal ? 'edit-' : '';
   const itens = {};
@@ -199,8 +179,8 @@ function abrirModal(key){
   if(!p) return;
   editKey = key;
 
-  document.getElementById('editCliente').value   = p.cliente || '';
-  document.getElementById('editObs').value       = p.obs     || '';
+  document.getElementById('editCliente').value  = p.cliente || '';
+  document.getElementById('editObs').value      = p.obs     || '';
   document.getElementById('editPagamento').value = p.pagamento || '';
 
   editCarrinho = {};
@@ -208,9 +188,9 @@ function abrirModal(key){
 
   for(const [nomeCompleto, qtd] of Object.entries(p.itens || {})){
     for(const [id, prod] of Object.entries(produtos)){
-      const nomeBase = prod.nome.replace(/\s*\(.*\)$/,'').trim();
-      if(nomeCompleto.startsWith(nomeBase)){
-        editCarrinho[id] = qtd; break;
+      if(nomeCompleto.startsWith(prod.nome.replace(/\s*\(.*\)$/,'').trim())){
+        editCarrinho[id] = qtd;
+        break;
       }
     }
   }
@@ -244,8 +224,6 @@ function alterarEdit(id, valor){
   editCarrinho[id] = Math.max(0, (editCarrinho[id] || 0) + valor);
   const el = document.getElementById(`edit-q-${id}`);
   if(el) el.textContent = editCarrinho[id];
-  const card = document.getElementById(`edit-prod-${id}`);
-  if(card) card.classList.toggle('has-item', editCarrinho[id] > 0);
   atualizarTotalEdit();
 }
 
@@ -256,37 +234,37 @@ function atualizarTotalEdit(){
 }
 
 function salvarEdicao(){
-  if(!db || !editKey){ toast('Erro interno', 'error'); return; }
+  if(!db || !editKey){ toast('Erro interno', true); return; }
+
   const cliente = document.getElementById('editCliente').value.trim();
-  if(!cliente){ toast('Informe o nome do cliente', 'error'); return; }
+  if(!cliente){ toast('Informe o nome do cliente', true); return; }
+
   if(!Object.values(editCarrinho).some(q => q > 0)){
-    toast('Adicione pelo menos 1 item', 'error'); return;
+    toast('Adicione pelo menos 1 item', true); return;
   }
+
   const pagamento = document.getElementById('editPagamento').value;
   const { itens, total, erro } = montarItens(editCarrinho, true);
-  if(erro){ toast(erro, 'error'); return; }
+  if(erro){ toast(erro, true); return; }
 
-  db.ref('pedidos/' + editKey).update({
+  const updates = {
     cliente,
     obs: document.getElementById('editObs').value.trim(),
-    pagamento, itens, total,
+    pagamento,
+    itens,
+    total,
     editadoEm: new Date().toLocaleTimeString('pt-BR',{ hour:'2-digit', minute:'2-digit' })
-  })
-  .then(() => { fecharModal(); toast('Pedido atualizado!', 'success'); })
-  .catch(() => toast('Erro ao salvar', 'error'));
+  };
+
+  db.ref('pedidos/' + editKey).update(updates)
+    .then(() => { fecharModal(); toast('✅ Pedido atualizado!'); })
+    .catch(() => toast('Erro ao salvar', true));
 }
 
+/* Fechar modal ao clicar no fundo */
 document.getElementById('editModal').addEventListener('click', function(e){
   if(e.target === this) fecharModal();
 });
-
-/* ───── FILTRO ─────────────────────────────────────────── */
-function setFiltro(filtro, event){
-  filtroAtivo = filtro;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
-  renderPedidos();
-}
 
 /* ───── RENDER PEDIDOS ─────────────────────────────────── */
 function renderPedidos(){
@@ -299,12 +277,8 @@ function renderPedidos(){
 
   if(termo) arr = arr.filter(p => p.cliente.toLowerCase().includes(termo));
 
-  if(filtroAtivo === 'pendentes')    arr = arr.filter(p => !p.entregue);
-  if(filtroAtivo === 'entregues')    arr = arr.filter(p => p.entregue);
-  if(filtroAtivo === 'semPagamento') arr = arr.filter(p => !p.pagamento);
-
   if(!arr.length){
-    lista.innerHTML = `<div class="card" style="text-align:center;color:var(--text3);padding:32px;">Nenhum pedido encontrado.</div>`;
+    lista.innerHTML = `<div class="card" style="text-align:center;color:#B58B67;">Nenhum pedido encontrado.</div>`;
     return;
   }
 
@@ -312,196 +286,38 @@ function renderPedidos(){
     const semPag = !p.pagamento;
     return `
       <div class="order-card ${p.entregue ? 'entregue' : ''} ${semPag && !p.entregue ? 'sem-pagamento' : ''}">
-        <div class="order-head">
+        <div class="order-top">
           <div>
-            <div class="order-num">Pedido #${String(p.id).padStart(3,'0')}</div>
-            <div class="order-client">${p.cliente}</div>
-            <div class="order-meta">🕐 ${p.hora}${p.editadoEm ? ` · ✏️ editado ${p.editadoEm}` : ''}</div>
+            <div class="order-client">#${String(p.id).padStart(3,'0')} — ${p.cliente}</div>
+            <div class="order-time">🕐 ${p.hora}${p.editadoEm ? ` &nbsp;·&nbsp; ✏️ editado ${p.editadoEm}` : ''}</div>
           </div>
-          <div class="order-tags">
-            <span class="tag ${p.entregue ? 'tag-green' : 'tag-orange'}">${p.entregue ? '✅ Entregue' : '⏳ Pendente'}</span>
-            <span class="tag ${p.pago ? 'tag-green' : 'tag-red'}">${p.pago ? '💰 Pago' : '💸 Não pago'}</span>
-            <span class="tag ${semPag ? 'tag-muted' : 'tag-amber'}">${semPag ? '❓ Pag. não inf.' : '💳 ' + p.pagamento}</span>
+          <div class="order-status-tags">
+            <span class="status-tag ${p.entregue ? 'tag-entregue' : 'tag-pendente'}">${p.entregue ? '✅ Entregue' : '⏳ Pendente'}</span>
+            <span class="status-tag ${p.pago ? 'tag-pago' : 'tag-naopago'}">${p.pago ? '💰 Pago' : '💸 Não pago'}</span>
+            <span class="status-tag ${semPag ? 'tag-sempag' : 'tag-pagamento'}">${semPag ? '❓ Pag. não inf.' : '💳 '+p.pagamento}</span>
           </div>
         </div>
 
-        <div class="order-items-box">
+        <div class="order-items">
           ${Object.entries(p.itens).map(([nome,qtd]) => `
             <div class="order-item">
               <span>${nome}</span>
-              <strong>× ${qtd}</strong>
-            </div>`).join('')}
+              <strong>x${qtd}</strong>
+            </div>
+          `).join('')}
         </div>
 
         ${p.obs ? `<div class="order-obs">📝 ${p.obs}</div>` : ''}
 
-        <div class="order-total-row">
-          <span style="font-size:.8rem;color:var(--text3);letter-spacing:1px;text-transform:uppercase;font-weight:600;">Total</span>
-          <div class="order-total">${moeda(p.total)}</div>
-        </div>
+        <div class="order-total">${moeda(p.total)}</div>
 
         <div class="order-actions">
           ${!p.entregue ? `<button class="small-btn done-btn" onclick="entregar('${p._key}')">✅ Entregue</button>` : ''}
-          <button class="small-btn edit-btn"   onclick="abrirModal('${p._key}')">✏️ Editar</button>
-          <button class="small-btn pay-btn"    onclick="marcarPago('${p._key}')">${p.pago ? '💰 Pago' : '💳 Pagar'}</button>
+          <button class="small-btn edit-btn" onclick="abrirModal('${p._key}')">✏️ Editar</button>
+          <button class="small-btn pay-btn" onclick="marcarPago('${p._key}')">${p.pago ? '💰 Pago' : '💳 Marcar Pago'}</button>
           <button class="small-btn delete-btn" onclick="excluir('${p._key}')">🗑</button>
         </div>
-      </div>`;
+      </div>
+    `;
   }).join('');
 }
-
-/* ───── AÇÕES ──────────────────────────────────────────── */
-function entregar(key){
-  db.ref('pedidos/'+key+'/entregue').set(true).then(() => toast('Pedido entregue!', 'success'));
-}
-
-function marcarPago(key){
-  const atual = pedidos[key]?.pago || false;
-  db.ref('pedidos/'+key+'/pago').set(!atual)
-    .then(() => toast(atual ? 'Pagamento desmarcado' : 'Marcado como pago', 'success'));
-}
-
-function excluir(key){
-  if(!confirm('Excluir este pedido?')) return;
-  db.ref('pedidos/'+key).remove().then(() => toast('Pedido excluído', 'success'));
-}
-
-function zerarDia(){
-  if(!db) return;
-  if(!confirm('Zerar TODOS os pedidos do dia?\n\nEssa ação não pode ser desfeita!')) return;
-  db.ref('pedidos').remove().then(() => toast('Pedidos zerados!', 'success'));
-}
-
-/* ───── RESUMO ─────────────────────────────────────────── */
-function renderResumo(){
-  let faturamento=0, pagos=0, entregues=0;
-  const porPagamento = {};
-  const refriVendidos = {};
-  let refriTotal=0, refriQtd=0;
-
-  Object.values(pedidos).forEach(p => {
-    faturamento += p.total || 0;
-    if(p.pago)     pagos++;
-    if(p.entregue) entregues++;
-    const forma = p.pagamento || 'Não informado';
-    porPagamento[forma] = (porPagamento[forma] || 0) + (p.total||0);
-
-    Object.entries(p.itens || {}).forEach(([nomeItem, qtd]) => {
-      let produtoEncontrado = null;
-      for(const [rid, prod] of Object.entries(produtos)){
-        if(!rid.includes('refri')) continue;
-        const nomeBase = prod.nome.replace(/\s*\(.*\)$/,'').trim();
-        if(nomeItem.startsWith(nomeBase)){ produtoEncontrado = prod; break; }
-      }
-      if(!produtoEncontrado) return;
-      const precoUnit = produtoEncontrado.preco;
-      if(!refriVendidos[nomeItem]) refriVendidos[nomeItem] = { qtd:0, total:0 };
-      refriVendidos[nomeItem].qtd   += qtd;
-      refriVendidos[nomeItem].total += qtd * precoUnit;
-      refriTotal += qtd * precoUnit;
-      refriQtd   += qtd;
-    });
-  });
-
-  document.getElementById('fatTotal').textContent       = moeda(faturamento);
-  document.getElementById('pedidosTotal').textContent   = Object.keys(pedidos).length;
-  document.getElementById('pagosTotal').textContent     = pagos;
-  document.getElementById('entreguesTotal').textContent = entregues;
-
-  // Por pagamento
-  const resumoPag = document.getElementById('resumoPagamento');
-  if(resumoPag){
-    if(!Object.keys(porPagamento).length){
-      resumoPag.innerHTML = '<p class="empty-msg">Nenhum dado ainda</p>';
-    } else {
-      resumoPag.innerHTML = Object.entries(porPagamento)
-        .sort((a,b) => b[1]-a[1])
-        .map(([forma,valor]) => `
-          <div class="resumo-row">
-            <span>${forma}</span>
-            <strong>${moeda(valor)}</strong>
-          </div>`).join('');
-    }
-  }
-
-  // Refrigerantes
-  const resumoRefri = document.getElementById('resumoRefri');
-  if(!resumoRefri) return;
-  if(!Object.keys(refriVendidos).length){
-    resumoRefri.innerHTML = '<p class="empty-msg">Nenhum refrigerante vendido ainda</p>';
-  } else {
-    resumoRefri.innerHTML =
-      Object.entries(refriVendidos)
-        .sort((a,b) => b[1].qtd - a[1].qtd)
-        .map(([nome, dados]) => `
-          <div class="resumo-row">
-            <span>${nome}</span>
-            <span style="display:flex;gap:16px;align-items:center;">
-              <span style="color:var(--text3);font-size:.8rem;">× ${dados.qtd}</span>
-              <strong>${moeda(dados.total)}</strong>
-            </span>
-          </div>`).join('') +
-      `<div class="resumo-total-row">
-        <span style="font-size:.75rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);">Total (${refriQtd} unid.)</span>
-        <strong style="color:var(--fire2);font-size:1.1rem;">${moeda(refriTotal)}</strong>
-      </div>`;
-  }
-}
-
-/* ───── UTILITÁRIOS ────────────────────────────────────── */
-function limpar(){
-  Object.keys(carrinho).forEach(k => { carrinho[k] = 0; });
-  iniciarProdutos();
-  atualizarTotal();
-  atualizarCartCounter();
-  document.getElementById('cliente').value   = '';
-  document.getElementById('obs').value       = '';
-  document.getElementById('pagamento').value = '';
-}
-
-function moeda(v){
-  return 'R$ ' + Number(v).toFixed(2).replace('.',',');
-}
-
-let toastTimer = null;
-function toast(msg, tipo = ''){
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast show' + (tipo ? ' ' + tipo : '');
-  if(toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { t.className = 'toast'; }, 2800);
-}
-
-/* ───── TABS ───────────────────────────────────────────── */
-function goTab(id, event){
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.getElementById(`panel-${id}`).classList.add('active');
-  event.currentTarget.classList.add('active');
-  if(id === 'resumo') renderResumo();
-}
-
-/* ───── RELÓGIO ────────────────────────────────────────── */
-function relogio(){
-  document.getElementById('clock').textContent =
-    new Date().toLocaleTimeString('pt-BR',{ hour:'2-digit', minute:'2-digit' });
-}
-setInterval(relogio, 1000);
-relogio();
-
-/* ───── INIT ───────────────────────────────────────────── */
-iniciarProdutos();
-atualizarTotal();
-
-window.addEventListener('load', () => {
-  const url = localStorage.getItem('firebase_url');
-  setTimeout(() => {
-    document.getElementById('loadingScreen').classList.add('hidden');
-    if(url){
-      document.getElementById('setupOverlay').style.display = 'none';
-      iniciarFirebase(url);
-    } else {
-      document.getElementById('setupOverlay').style.display = 'flex';
-    }
-  }, 1800);
-});
