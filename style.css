@@ -490,7 +490,7 @@ input::placeholder{
   color:var(--amber);
 }
 
-/* ── MODAL ──────────────────────────────── */
+/* ── MODAL DE EDIÇÃO ────────────────────── */
 .modal-overlay{
   position:fixed;
   inset:0;
@@ -500,6 +500,17 @@ input::placeholder{
   align-items:flex-end;
   justify-content:center;
   backdrop-filter:blur(4px);
+  animation:fadeIn .2s ease;
+}
+
+@keyframes fadeIn{
+  from{
+    opacity:0;
+  }
+
+  to{
+    opacity:1;
+  }
 }
 
 .modal-box{
@@ -511,6 +522,17 @@ input::placeholder{
   overflow-y:auto;
   padding:28px 22px 40px;
   border-top:1px solid rgba(255,176,0,.15);
+  animation:slideUp .28s cubic-bezier(.34,1.26,.64,1);
+}
+
+@keyframes slideUp{
+  from{
+    transform:translateY(100%);
+  }
+
+  to{
+    transform:translateY(0);
+  }
 }
 
 .modal-header{
@@ -535,6 +557,15 @@ input::placeholder{
   color:var(--muted);
   font-size:1rem;
   cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:.2s;
+}
+
+.modal-close:hover{
+  background:rgba(231,76,60,.2);
+  color:var(--red);
 }
 
 .modal-section{
@@ -571,7 +602,14 @@ input::placeholder{
   background:transparent;
   color:var(--muted);
   font-weight:800;
+  font-family:'Nunito',sans-serif;
+  font-size:.95rem;
   cursor:pointer;
+  transition:.2s;
+}
+
+.modal-cancel-btn:hover{
+  border-color:var(--muted);
 }
 
 .modal-save-btn{
@@ -582,7 +620,15 @@ input::placeholder{
   background:linear-gradient(135deg,var(--fire),#D83D00);
   color:white;
   font-weight:900;
+  font-family:'Nunito',sans-serif;
+  font-size:.95rem;
   cursor:pointer;
+  box-shadow:0 6px 20px rgba(255,90,31,.3);
+  transition:.2s;
+}
+
+.modal-save-btn:hover{
+  transform:translateY(-1px);
 }
 
 /* ── TOAST ──────────────────────────────── */
