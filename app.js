@@ -196,7 +196,6 @@ function montarItens(carrinhoLocal, isModal){
       if(!sabor){
         return { itens:null, total:0, erro:'Escolha o sabor do refrigerante' };
       }
-      体积 = 0;
       nome += ` (${sabor})`;
     }
 
