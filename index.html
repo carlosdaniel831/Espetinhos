@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Espeto & Baião — Sistema de Vendas</title>
+  <title>Espeto & Baião</title>
   <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;0,9..40,900;1,9..40,400&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
-<!-- SETUP OVERLAY -->
+<!-- ══ SETUP OVERLAY ════════════════════════ -->
 <div id="setupOverlay" style="display:none;">
   <div class="setup-bg-art"></div>
   <div class="setup-box">
@@ -32,14 +32,14 @@
       <div>Cole a URL abaixo e clique em Conectar.</div>
     </div>
 
-    <label class="setup-label">URL do Firebase Realtime Database</label>
-    <input type="text" id="inputFirebaseUrl" placeholder="https://seu-projeto-default-rtdb.firebaseio.com" class="setup-input">
+    <label class="setup-label">URL do Firebase</label>
+    <input type="text" id="inputFirebaseUrl" class="setup-input" placeholder="https://seu-projeto-default-rtdb.firebaseio.com">
     <button onclick="salvarConfigFirebase()" class="setup-btn">⚡ CONECTAR AO BANCO</button>
     <p class="setup-note">A URL fica salva neste dispositivo. Configure uma vez por aparelho.</p>
   </div>
 </div>
 
-<!-- EDIT MODAL -->
+<!-- ══ EDIT MODAL ═══════════════════════════ -->
 <div id="editModal" class="modal-overlay" style="display:none;">
   <div class="modal-box">
     <div class="modal-header">
@@ -56,7 +56,7 @@
         <input type="text" id="editObs" placeholder="Observação do pedido">
       </div>
       <div class="field-group">
-        <label class="field-label">💳 Forma de Pagamento</label>
+        <label class="field-label">💳 Pagamento</label>
         <select id="editPagamento" class="select-input">
           <option value="">⏳ Não informar agora</option>
           <option value="Dinheiro">💵 Dinheiro</option>
@@ -83,7 +83,7 @@
   </div>
 </div>
 
-<!-- HEADER -->
+<!-- ══ HEADER ════════════════════════════════ -->
 <header class="header">
   <div class="header-brand">
     <div class="brand-icon">🔥</div>
@@ -101,11 +101,11 @@
   </div>
 </header>
 
-<!-- NAV TABS -->
+<!-- ══ TABS ══════════════════════════════════ -->
 <nav class="tabs">
   <button class="tab active" onclick="goTab('novo',event)">
     <span class="tab-icon">🛒</span>
-    <span>Novo Pedido</span>
+    <span>Novo</span>
   </button>
   <button class="tab" onclick="goTab('pedidos',event)">
     <span class="tab-icon">📋</span>
@@ -117,8 +117,9 @@
   </button>
 </nav>
 
-<!-- PANEL: NOVO PEDIDO -->
+<!-- ══ PANEL: NOVO PEDIDO ═════════════════════ -->
 <section class="panel active" id="panel-novo">
+
   <div class="order-hero">
     <div class="hero-stat">
       <small>Pedido Atual</small>
@@ -136,21 +137,15 @@
       <span class="card-title-icon">👤</span>
       <h2>Dados do Cliente</h2>
     </div>
-    <div class="field-group">
-      <input type="text" id="cliente" placeholder="Nome do cliente">
-    </div>
-    <div class="field-group">
-      <input type="text" id="obs" placeholder="Observação (opcional)">
-    </div>
-    <div class="field-group">
-      <select id="pagamento" class="select-input">
-        <option value="">⏳ Não informar pagamento agora</option>
-        <option value="Dinheiro">💵 Dinheiro</option>
-        <option value="Pix">📱 Pix</option>
-        <option value="Crédito">💳 Crédito</option>
-        <option value="Débito">💳 Débito</option>
-      </select>
-    </div>
+    <input type="text" id="cliente" placeholder="Nome do cliente">
+    <input type="text" id="obs" placeholder="Observação (opcional)">
+    <select id="pagamento" class="select-input">
+      <option value="">⏳ Não informar pagamento agora</option>
+      <option value="Dinheiro">💵 Dinheiro</option>
+      <option value="Pix">📱 Pix</option>
+      <option value="Crédito">💳 Crédito</option>
+      <option value="Débito">💳 Débito</option>
+    </select>
   </div>
 
   <div class="card">
@@ -168,9 +163,10 @@
     <span>Finalizar Pedido</span>
     <span class="btn-arrow">→</span>
   </button>
+
 </section>
 
-<!-- PANEL: PEDIDOS -->
+<!-- ══ PANEL: PEDIDOS ════════════════════════ -->
 <section class="panel" id="panel-pedidos">
   <div class="search-wrap">
     <span class="search-icon">🔍</span>
@@ -179,10 +175,9 @@
   <div id="listaPedidos"></div>
 </section>
 
-<!-- PANEL: RESUMO -->
+<!-- ══ PANEL: RESUMO ═════════════════════════ -->
 <section class="panel" id="panel-resumo">
 
-  <!-- Estatísticas principais -->
   <div class="stats-grid">
     <div class="stat-tile stat-faturamento">
       <div class="stat-label">💰 Faturamento</div>
@@ -202,18 +197,16 @@
     </div>
   </div>
 
-  <!-- Formas de pagamento -->
   <div class="card">
     <div class="card-title-row">
       <div class="card-title">
         <span class="card-title-icon">💳</span>
-        <h2>Por Forma de Pagamento</h2>
+        <h2>Por Pagamento</h2>
       </div>
     </div>
     <div id="resumoPagamento"><p class="empty-msg">Nenhum dado ainda</p></div>
   </div>
 
-  <!-- Baiões -->
   <div class="card">
     <div class="card-title-row">
       <div class="card-title">
@@ -225,7 +218,6 @@
     <div id="resumoBaiao"><p class="empty-msg">Nenhum baião vendido ainda</p></div>
   </div>
 
-  <!-- Espetos -->
   <div class="card">
     <div class="card-title-row">
       <div class="card-title">
@@ -237,7 +229,6 @@
     <div id="resumoEspeto"><p class="empty-msg">Nenhum espeto vendido ainda</p></div>
   </div>
 
-  <!-- Refrigerantes -->
   <div class="card">
     <div class="card-title-row">
       <div class="card-title">
@@ -252,6 +243,7 @@
   <button onclick="zerarDia()" class="btn-danger btn-full">
     🗑 ZERAR TODOS OS PEDIDOS DO DIA
   </button>
+
 </section>
 
 <!-- TOAST -->
