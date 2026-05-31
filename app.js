@@ -1,24 +1,22 @@
 /* ───── DADOS ──────────────────────────────────────────── */
 const produtos = {
-  baiaoTrad: { nome:'🍲 Baião Tradicional', preco:8 },
-  baiaoCrem: { nome:'🥘 Baião Cremoso',     preco:8 },
-  porco:     { nome:'🐷 Espeto de Porco',   preco:7 },
-  boi:       { nome:'🐄 Espeto de Boi',     preco:7 },
-  frango:    { nome:'🍗 Espeto de Frango',  preco:7 },
-  linguica:  { nome:'🌭 Espeto de Linguiça',preco:7 },
-  refri1:    { nome:'🥤 Guaraná 1L',        preco:7 },
-  refri15:   { nome:'🥤 Refrigerante 1,5L', preco:13 },
-  refri2:    { nome:'🥤 Refrigerante 2L',   preco:15 },
-  refriLata: { nome:'🥤 Refrigerante Lata', preco:5 }
+  baiaoTrad: { nome:'🍲 Baião Tradicional', preco:8,  categoria:'baiao'  },
+  baiaoCrem: { nome:'🥘 Baião Cremoso',     preco:8,  categoria:'baiao'  },
+  porco:     { nome:'🐷 Espeto de Porco',   preco:7,  categoria:'espeto' },
+  boi:       { nome:'🐄 Espeto de Boi',     preco:7,  categoria:'espeto' },
+  frango:    { nome:'🍗 Espeto de Frango',  preco:7,  categoria:'espeto' },
+  linguica:  { nome:'🌭 Espeto de Linguiça',preco:7,  categoria:'espeto' },
+  refri1:    { nome:'🥤 Guaraná 1L',        preco:7,  categoria:'refri'  },
+  refri15:   { nome:'🥤 Refrigerante 1,5L', preco:13, categoria:'refri'  },
+  refri2:    { nome:'🥤 Refrigerante 2L',   preco:15, categoria:'refri'  },
+  refriLata: { nome:'🥤 Refrigerante Lata', preco:5,  categoria:'refri'  }
 };
 
 const sabores = ['Coca-Cola','Fanta','Guaraná','Cajuína'];
 
 /* ───── ESTADO ─────────────────────────────────────────── */
 let carrinho = {};
-Object.keys(produtos).forEach(p => {
-  carrinho[p] = 0;
-});
+Object.keys(produtos).forEach(p => { carrinho[p] = 0; });
 
 let pedidos = {};
 let proximoNumero = 1;
@@ -31,31 +29,26 @@ let editCarrinho = {};
 /* ───── FIREBASE ───────────────────────────────────────── */
 function salvarConfigFirebase(){
   const url = document.getElementById('inputFirebaseUrl').value.trim();
-
   if(!url || !url.includes('firebase')){
     toast('URL inválida', true);
     return;
   }
-
   localStorage.setItem('firebase_url', url);
   document.getElementById('setupOverlay').style.display = 'none';
-
   iniciarFirebase(url);
 }
 
 function iniciarFirebase(url){
   try{
     if(!firebase.apps.length){
-      firebase.initializeApp({
-        databaseURL: url
-      });
+      firebase.initializeApp({ databaseURL: url });
     }
-
     db = firebase.database();
 
     db.ref('.info/connected').on('value', snap => {
       const ok = snap.val() === true;
-      document.getElementById('statusDot').style.background = ok ? '#21C45D' : '#E74C3C';
+      const dot = document.getElementById('statusDot');
+      dot.style.background = ok ? '#22C55E' : '#EF4444';
       document.getElementById('statusTexto').textContent = ok ? 'Online' : 'Offline';
     });
 
@@ -88,32 +81,49 @@ function iniciarProdutos(){
 }
 
 function renderCardapio(carrinhoLocal, fnAlterar, isModal){
-  return Object.entries(produtos).map(([id, p]) => {
-    const qtd = carrinhoLocal[id] || 0;
-    const prefix = isModal ? 'edit-' : '';
+  const categorias = {
+    baiao:  { label: '🍲 Baiões', ids: [] },
+    espeto: { label: '🍢 Espetos', ids: [] },
+    refri:  { label: '🥤 Bebidas', ids: [] }
+  };
+
+  Object.entries(produtos).forEach(([id, p]) => {
+    categorias[p.categoria].ids.push(id);
+  });
+
+  return Object.entries(categorias).map(([cat, { label, ids }]) => {
+    const items = ids.map(id => {
+      const p = produtos[id];
+      const qtd = carrinhoLocal[id] || 0;
+      const prefix = isModal ? 'edit-' : '';
+      return `
+        <div class="product">
+          <div class="product-top">
+            <div class="product-info">
+              <strong>${p.nome}</strong>
+              <p>${moeda(p.preco)}</p>
+            </div>
+            <div class="qty-wrap">
+              <button class="qty-btn minus" onclick="${fnAlterar}('${id}',-1)">−</button>
+              <div class="qty-number" id="${prefix}q-${id}">${qtd}</div>
+              <button class="qty-btn plus" onclick="${fnAlterar}('${id}',1)">+</button>
+            </div>
+          </div>
+          ${id.includes('refri') && id !== 'refri1'
+            ? `<select class="refri-select" id="${prefix}sabor-${id}">
+                <option value="">Escolha o sabor...</option>
+                ${sabores.map(s => `<option value="${s}">${s}</option>`).join('')}
+               </select>`
+            : ''
+          }
+        </div>
+      `;
+    }).join('');
 
     return `
-      <div class="product">
-        <div class="product-top">
-          <div class="product-info">
-            <strong>${p.nome}</strong>
-            <p>${moeda(p.preco)}</p>
-          </div>
-          <div class="qty-wrap">
-            <button class="qty-btn minus" onclick="${fnAlterar}('${id}',-1)">-</button>
-            <div class="qty-number" id="${prefix}q-${id}">${qtd}</div>
-            <button class="qty-btn plus" onclick="${fnAlterar}('${id}',1)">+</button>
-          </div>
-        </div>
-        ${id.includes('refri') && id !== 'refri1'
-          ? `
-            <select class="refri-select" id="${prefix}sabor-${id}">
-              <option value="">Escolha o sabor</option>
-              ${sabores.map(s => `<option value="${s}">${s}</option>`).join('')}
-            </select>
-          `
-          : ''
-        }
+      <div style="margin-bottom:6px;">
+        <div style="font-size:.72rem;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin:18px 0 10px;">${label}</div>
+        ${items}
       </div>
     `;
   }).join('');
@@ -135,29 +145,14 @@ function atualizarTotal(){
 }
 
 function finalizarPedido(){
-  if(!db){
-    toast('Banco não conectado!', true);
-    return;
-  }
-
+  if(!db){ toast('Banco não conectado!', true); return; }
   const cliente = document.getElementById('cliente').value.trim();
-  if(!cliente){
-    toast('Informe o nome do cliente', true);
-    return;
-  }
-
-  if(!Object.values(carrinho).some(q => q > 0)){
-    toast('Adicione pelo menos 1 item', true);
-    return;
-  }
+  if(!cliente){ toast('Informe o nome do cliente', true); return; }
+  if(!Object.values(carrinho).some(q => q > 0)){ toast('Adicione pelo menos 1 item', true); return; }
 
   const pagamento = document.getElementById('pagamento').value;
   const { itens, total, erro } = montarItens(carrinho, false);
-
-  if(erro){
-    toast(erro, true);
-    return;
-  }
+  if(erro){ toast(erro, true); return; }
 
   db.ref('pedidos').push({
     id: proximoNumero,
@@ -171,13 +166,8 @@ function finalizarPedido(){
     hora: new Date().toLocaleTimeString('pt-BR',{ hour:'2-digit', minute:'2-digit' }),
     timestamp: Date.now()
   })
-  .then(() => {
-    limpar();
-    toast('✅ Pedido criado!');
-  })
-  .catch(() => {
-    toast('Erro ao salvar', true);
-  });
+  .then(() => { limpar(); toast('✅ Pedido criado!'); })
+  .catch(() => { toast('Erro ao salvar', true); });
 }
 
 function montarItens(carrinhoLocal, isModal){
@@ -192,10 +182,7 @@ function montarItens(carrinhoLocal, isModal){
     if(id.includes('refri') && id !== 'refri1'){
       const sel = document.getElementById(`${prefix}sabor-${id}`);
       const sabor = sel ? sel.value : '';
-
-      if(!sabor){
-        return { itens:null, total:0, erro:'Escolha o sabor do refrigerante' };
-      }
+      if(!sabor){ return { itens:null, total:0, erro:'Escolha o sabor do refrigerante' }; }
       nome += ` (${sabor})`;
     }
 
@@ -210,8 +197,8 @@ function montarItens(carrinhoLocal, isModal){
 function abrirModal(key){
   const p = pedidos[key];
   if(!p) return;
-
   editKey = key;
+
   document.getElementById('editCliente').value = p.cliente || '';
   document.getElementById('editObs').value = p.obs || '';
   document.getElementById('editPagamento').value = p.pagamento || '';
@@ -234,7 +221,6 @@ function abrirModal(key){
     const match = nomeCompleto.match(/\((.+)\)$/);
     if(!match) continue;
     const sabor = match[1];
-
     for(const [id, prod] of Object.entries(produtos)){
       if(id.includes('refri') && id !== 'refri1' && nomeCompleto.startsWith(prod.nome)){
         const sel = document.getElementById(`edit-sabor-${id}`);
@@ -270,29 +256,14 @@ function atualizarTotalEdit(){
 }
 
 function salvarEdicao(){
-  if(!db || !editKey){
-    toast('Erro interno', true);
-    return;
-  }
-
+  if(!db || !editKey){ toast('Erro interno', true); return; }
   const cliente = document.getElementById('editCliente').value.trim();
-  if(!cliente){
-    toast('Informe o nome do cliente', true);
-    return;
-  }
-
-  if(!Object.values(editCarrinho).some(q => q > 0)){
-    toast('Adicione pelo menos 1 item', true);
-    return;
-  }
+  if(!cliente){ toast('Informe o nome do cliente', true); return; }
+  if(!Object.values(editCarrinho).some(q => q > 0)){ toast('Adicione pelo menos 1 item', true); return; }
 
   const pagamento = document.getElementById('editPagamento').value;
   const { itens, total, erro } = montarItens(editCarrinho, true);
-
-  if(erro){
-    toast(erro, true);
-    return;
-  }
+  if(erro){ toast(erro, true); return; }
 
   const updates = {
     cliente,
@@ -304,13 +275,8 @@ function salvarEdicao(){
   };
 
   db.ref('pedidos/' + editKey).update(updates)
-    .then(() => {
-      fecharModal();
-      toast('✅ Pedido atualizado!');
-    })
-    .catch(() => {
-      toast('Erro ao salvar', true);
-    });
+    .then(() => { fecharModal(); toast('✅ Pedido atualizado!'); })
+    .catch(() => { toast('Erro ao salvar', true); });
 }
 
 document.getElementById('editModal').addEventListener('click', function(e){
@@ -330,7 +296,7 @@ function renderPedidos(){
   }
 
   if(!arr.length){
-    lista.innerHTML = `<div class="card" style="text-align:center;color:#B58B67;">Nenhum pedido encontrado.</div>`;
+    lista.innerHTML = `<div class="card" style="text-align:center;color:var(--text-muted);">Nenhum pedido encontrado.</div>`;
     return;
   }
 
@@ -341,19 +307,19 @@ function renderPedidos(){
         <div class="order-top">
           <div>
             <div class="order-client">#${String(p.id).padStart(3,'0')} — ${p.cliente}</div>
-            <div class="order-time">🕐 ${p.hora}</div>
+            <div class="order-time">🕐 ${p.hora}${p.editadoEm ? ' · editado às ' + p.editadoEm : ''}</div>
           </div>
           <div class="order-status-tags">
             <span class="status-tag ${p.entregue ? 'tag-entregue' : 'tag-pendente'}">${p.entregue ? '✅ Entregue' : '⏳ Pendente'}</span>
             <span class="status-tag ${p.pago ? 'tag-pago' : 'tag-naopago'}">${p.pago ? '💰 Pago' : '💸 Não pago'}</span>
-            <span class="status-tag ${semPag ? 'tag-sempag' : 'tag-pagamento'}">${semPag ? '❓ Pag. não inf.' : '💳 ' + p.pagamento}</span>
+            <span class="status-tag ${semPag ? 'tag-sempag' : 'tag-pagamento'}">${semPag ? '❓ Não informado' : '💳 ' + p.pagamento}</span>
           </div>
         </div>
         <div class="order-items">
           ${Object.entries(p.itens).map(([nome,qtd]) => `
             <div class="order-item">
               <span>${nome}</span>
-              <strong>x${qtd}</strong>
+              <strong>×${qtd}</strong>
             </div>
           `).join('')}
         </div>
@@ -395,62 +361,148 @@ function zerarDia(){
     .then(() => { toast('Pedidos zerados!'); });
 }
 
-/* ───── RESUMO (SISTEMA DE FILTRO ATUALIZADO) ──────────── */
+/* ───── RESUMO ─────────────────────────────────────────── */
 function renderResumo(){
-  let faturamento = 0;
-  let pagos = 0;
-  let entregues = 0;
+  let faturamento = 0, pagos = 0, entregues = 0;
   const porPagamento = {};
-  const contagemRefri = {};
+  // Contagem separada por categoria
+  const contagemBaiao  = {};  // { nome: { qtd, total } }
+  const contagemEspeto = {};
+  const contagemRefri  = {};
+
+  // Mapa: nome_completo_do_item → produto_id (para identificar categoria)
+  function identificarCategoria(nomeItem){
+    for(const [id, prod] of Object.entries(produtos)){
+      const nomeBase = prod.nome.replace(/\s*\(.*\)$/,'').trim();
+      if(nomeItem.startsWith(nomeBase)){
+        return prod.categoria;
+      }
+    }
+    // fallback: heurística
+    if(nomeItem.includes('Baião')) return 'baiao';
+    if(nomeItem.includes('Espeto')) return 'espeto';
+    if(nomeItem.includes('Refrigerante') || nomeItem.includes('Guaraná') || nomeItem.includes('Lata')) return 'refri';
+    return 'outro';
+  }
+
+  function precoUnitario(nomeItem){
+    for(const [id, prod] of Object.entries(produtos)){
+      const nomeBase = prod.nome.replace(/\s*\(.*\)$/,'').trim();
+      if(nomeItem.startsWith(nomeBase)) return prod.preco;
+    }
+    return 0;
+  }
 
   Object.values(pedidos).forEach(p => {
     faturamento += p.total || 0;
     if(p.pago) pagos++;
     if(p.entregue) entregues++;
-    
+
     const forma = p.pagamento || 'Não informado';
     porPagamento[forma] = (porPagamento[forma] || 0) + (p.total || 0);
 
     if(p.itens){
       Object.entries(p.itens).forEach(([nomeItem, qtd]) => {
-        // CORREÇÃO: Filtra verificando se no nome do item existe o texto "Refrigerante" ou "Guaraná"
-        if(nomeItem.includes('Refrigerante') || nomeItem.includes('Guaraná')){
-          contagemRefri[nomeItem] = (contagemRefri[nomeItem] || 0) + qtd;
+        const cat = identificarCategoria(nomeItem);
+        const preco = precoUnitario(nomeItem);
+        const subtotal = qtd * preco;
+
+        if(cat === 'baiao'){
+          contagemBaiao[nomeItem] = contagemBaiao[nomeItem] || { qtd:0, total:0 };
+          contagemBaiao[nomeItem].qtd += qtd;
+          contagemBaiao[nomeItem].total += subtotal;
+        } else if(cat === 'espeto'){
+          contagemEspeto[nomeItem] = contagemEspeto[nomeItem] || { qtd:0, total:0 };
+          contagemEspeto[nomeItem].qtd += qtd;
+          contagemEspeto[nomeItem].total += subtotal;
+        } else if(cat === 'refri'){
+          contagemRefri[nomeItem] = contagemRefri[nomeItem] || { qtd:0, total:0 };
+          contagemRefri[nomeItem].qtd += qtd;
+          contagemRefri[nomeItem].total += subtotal;
         }
       });
     }
   });
 
-  document.getElementById('fatTotal').textContent = moeda(faturamento);
-  document.getElementById('pedidosTotal').textContent = Object.keys(pedidos).length;
-  document.getElementById('pagosTotal').textContent = pagos;
-  document.getElementById('entreguesTotal').textContent = entregues;
+  /* Totais por categoria */
+  const totalBaiao  = Object.values(contagemBaiao).reduce((s,v)  => s + v.total, 0);
+  const totalEspeto = Object.values(contagemEspeto).reduce((s,v) => s + v.total, 0);
 
+  /* Estatísticas gerais */
+  document.getElementById('fatTotal').textContent        = moeda(faturamento);
+  document.getElementById('pedidosTotal').textContent    = Object.keys(pedidos).length;
+  document.getElementById('pagosTotal').textContent      = pagos;
+  document.getElementById('entreguesTotal').textContent  = entregues;
+
+  /* Por pagamento */
   const resumoPag = document.getElementById('resumoPagamento');
   if(resumoPag){
-    if(Object.keys(porPagamento).length === 0){
-      resumoPag.innerHTML = `<p style="color:#B58B67;font-size:.85rem;">Nenhum dado ainda</p>`;
+    if(!Object.keys(porPagamento).length){
+      resumoPag.innerHTML = `<p class="empty-msg">Nenhum dado ainda</p>`;
     } else {
       resumoPag.innerHTML = Object.entries(porPagamento).sort((a,b) => b[1] - a[1])
         .map(([forma, valor]) => `
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);">
-            <span style="font-size:.95rem;">💳 ${forma}</span>
-            <strong style="color:#FFB000;">${moeda(valor)}</strong>
+          <div class="resumo-row">
+            <span class="resumo-row-name">💳 ${forma}</span>
+            <span class="resumo-row-val">${moeda(valor)}</span>
           </div>
         `).join('');
     }
   }
 
+  /* Baiões */
+  const resumoBaiao = document.getElementById('resumoBaiao');
+  const lucroBaiao  = document.getElementById('lucroBaiao');
+  if(lucroBaiao) lucroBaiao.textContent = moeda(totalBaiao);
+  if(resumoBaiao){
+    if(!Object.keys(contagemBaiao).length){
+      resumoBaiao.innerHTML = `<p class="empty-msg">Nenhum baião vendido ainda</p>`;
+    } else {
+      resumoBaiao.innerHTML = Object.entries(contagemBaiao).sort((a,b) => b[1].qtd - a[1].qtd)
+        .map(([nome, { qtd, total }]) => `
+          <div class="resumo-row">
+            <span class="resumo-row-name">${nome}</span>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="resumo-row-qty">${qtd} un</span>
+              <span class="resumo-row-val">${moeda(total)}</span>
+            </div>
+          </div>
+        `).join('');
+    }
+  }
+
+  /* Espetos */
+  const resumoEspeto = document.getElementById('resumoEspeto');
+  const lucroEspeto  = document.getElementById('lucroEspeto');
+  if(lucroEspeto) lucroEspeto.textContent = moeda(totalEspeto);
+  if(resumoEspeto){
+    if(!Object.keys(contagemEspeto).length){
+      resumoEspeto.innerHTML = `<p class="empty-msg">Nenhum espeto vendido ainda</p>`;
+    } else {
+      resumoEspeto.innerHTML = Object.entries(contagemEspeto).sort((a,b) => b[1].qtd - a[1].qtd)
+        .map(([nome, { qtd, total }]) => `
+          <div class="resumo-row">
+            <span class="resumo-row-name">${nome}</span>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="resumo-row-qty">${qtd} un</span>
+              <span class="resumo-row-val">${moeda(total)}</span>
+            </div>
+          </div>
+        `).join('');
+    }
+  }
+
+  /* Refrigerantes */
   const resumoRefri = document.getElementById('resumoRefri');
   if(resumoRefri){
-    if(Object.keys(contagemRefri).length === 0){
-      resumoRefri.innerHTML = `<p style="color:#B58B67;font-size:.85rem;">Nenhum refrigerante vendido ainda</p>`;
+    if(!Object.keys(contagemRefri).length){
+      resumoRefri.innerHTML = `<p class="empty-msg">Nenhum refrigerante vendido ainda</p>`;
     } else {
-      resumoRefri.innerHTML = Object.entries(contagemRefri).sort((a,b) => b[1] - a[1])
-        .map(([nomeRefri, qtd]) => `
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);">
-            <span style="font-size:.95rem;">${nomeRefri}</span>
-            <strong style="color:#21C45D; background:rgba(33,196,93,.1); padding:4px 10px; border-radius:8px;">${qtd} un</strong>
+      resumoRefri.innerHTML = Object.entries(contagemRefri).sort((a,b) => b[1].qtd - a[1].qtd)
+        .map(([nome, { qtd }]) => `
+          <div class="resumo-row">
+            <span class="resumo-row-name">${nome}</span>
+            <span class="resumo-row-qty">${qtd} un</span>
           </div>
         `).join('');
     }
@@ -476,25 +528,23 @@ function toast(msg, isError = false){
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.className = 'toast show' + (isError ? ' error' : '');
-
   if(toastTimer){ clearTimeout(toastTimer); }
-  toastTimer = setTimeout(() => { t.className = 'toast'; }, 2500);
+  toastTimer = setTimeout(() => { t.className = 'toast'; }, 2800);
 }
 
 /* ───── TABS ───────────────────────────────────────────── */
 function goTab(id, event){
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-
   document.getElementById(`panel-${id}`).classList.add('active');
-  event.target.classList.add('active');
-
+  event.currentTarget.classList.add('active');
   if(id === 'resumo'){ renderResumo(); }
 }
 
 /* ───── RELÓGIO ────────────────────────────────────────── */
 function relogio(){
-  document.getElementById('clock').textContent = new Date().toLocaleTimeString('pt-BR',{ hour:'2-digit', minute:'2-digit' });
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('pt-BR',{ hour:'2-digit', minute:'2-digit' });
 }
 setInterval(relogio, 1000);
 relogio();
