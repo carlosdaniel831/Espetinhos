@@ -370,25 +370,36 @@ function renderResumo(){
   const contagemEspeto = {};
   const contagemRefri  = {};
 
-  // Mapa: nome_completo_do_item → produto_id (para identificar categoria)
+  // Normaliza string removendo emojis, espaços extras e conteúdo entre parênteses
+  function normalizar(str){
+    return str
+      .replace(/\(.*?\)/g, '')           // remove (sabor)
+      .replace(/[\u{1F300}-\u{1FFFF}]/gu, '') // remove emojis
+      .replace(/[^\w\sÀ-ú]/g, '')        // remove símbolos restantes
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
   function identificarCategoria(nomeItem){
+    const nNome = normalizar(nomeItem);
+    // Tenta match exato normalizado com os produtos cadastrados
     for(const [id, prod] of Object.entries(produtos)){
-      const nomeBase = prod.nome.replace(/\s*\(.*\)$/,'').trim();
-      if(nomeItem.startsWith(nomeBase)){
+      if(nNome.includes(normalizar(prod.nome))){
         return prod.categoria;
       }
     }
-    // fallback: heurística
-    if(nomeItem.includes('Baião')) return 'baiao';
-    if(nomeItem.includes('Espeto')) return 'espeto';
-    if(nomeItem.includes('Refrigerante') || nomeItem.includes('Guaraná') || nomeItem.includes('Lata')) return 'refri';
+    // Fallback por palavras-chave
+    if(nNome.includes('baiao') || nNome.includes('baião')) return 'baiao';
+    if(nNome.includes('espeto')) return 'espeto';
+    if(nNome.includes('refrigerante') || nNome.includes('guarana') || nNome.includes('guaraná') || nNome.includes('lata')) return 'refri';
     return 'outro';
   }
 
   function precoUnitario(nomeItem){
+    const nNome = normalizar(nomeItem);
     for(const [id, prod] of Object.entries(produtos)){
-      const nomeBase = prod.nome.replace(/\s*\(.*\)$/,'').trim();
-      if(nomeItem.startsWith(nomeBase)) return prod.preco;
+      if(nNome.includes(normalizar(prod.nome))) return prod.preco;
     }
     return 0;
   }
