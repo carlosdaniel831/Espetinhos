@@ -351,9 +351,18 @@ function zerarDia(){
 }
 
 /* ───── RESUMO ─────────────────────────────────────────── */
+
+// IDs dos produtos que são refrigerantes
+const idsRefri = ['refri1','refri15','refri2','refriLata'];
+
 function renderResumo(){
   let faturamento=0, pagos=0, entregues=0;
   const porPagamento = {};
+
+  // Contagem de refrigerantes: { "nome do item": { qtd, total } }
+  const refriVendidos = {};
+  let refriTotalGeral = 0;
+  let refriQtdGeral   = 0;
 
   Object.values(pedidos).forEach(p => {
     faturamento += p.total || 0;
@@ -361,26 +370,72 @@ function renderResumo(){
     if(p.entregue) entregues++;
     const forma = p.pagamento || 'Não informado';
     porPagamento[forma] = (porPagamento[forma] || 0) + (p.total||0);
+
+    // Varrer itens do pedido e identificar refrigerantes
+    Object.entries(p.itens || {}).forEach(([nomeItem, qtd]) => {
+      // Verifica se o item corresponde a algum produto refri
+      const isRefri = idsRefri.some(rid => nomeItem.startsWith(produtos[rid].nome));
+      if(!isRefri) return;
+
+      // Descobre o preço pelo produto correspondente
+      let precoUnit = 0;
+      for(const rid of idsRefri){
+        if(nomeItem.startsWith(produtos[rid].nome)){ precoUnit = produtos[rid].preco; break; }
+      }
+
+      if(!refriVendidos[nomeItem]) refriVendidos[nomeItem] = { qtd:0, total:0 };
+      refriVendidos[nomeItem].qtd   += qtd;
+      refriVendidos[nomeItem].total += qtd * precoUnit;
+      refriTotalGeral += qtd * precoUnit;
+      refriQtdGeral   += qtd;
+    });
   });
 
-  document.getElementById('fatTotal').textContent     = moeda(faturamento);
-  document.getElementById('pedidosTotal').textContent = Object.keys(pedidos).length;
-  document.getElementById('pagosTotal').textContent   = pagos;
+  document.getElementById('fatTotal').textContent       = moeda(faturamento);
+  document.getElementById('pedidosTotal').textContent   = Object.keys(pedidos).length;
+  document.getElementById('pagosTotal').textContent     = pagos;
   document.getElementById('entreguesTotal').textContent = entregues;
 
+  // ── Por forma de pagamento ──
   const resumoPag = document.getElementById('resumoPagamento');
-  if(!resumoPag) return;
-  if(Object.keys(porPagamento).length === 0){
-    resumoPag.innerHTML = '<p style="color:#B58B67;font-size:.85rem;">Nenhum dado ainda</p>';
+  if(resumoPag){
+    if(Object.keys(porPagamento).length === 0){
+      resumoPag.innerHTML = '<p style="color:#B58B67;font-size:.85rem;">Nenhum dado ainda</p>';
+    } else {
+      resumoPag.innerHTML = Object.entries(porPagamento)
+        .sort((a,b) => b[1] - a[1])
+        .map(([forma, valor]) => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+            <span style="font-size:.95rem;">💳 ${forma}</span>
+            <strong style="color:#FFB000;">${moeda(valor)}</strong>
+          </div>
+        `).join('');
+    }
+  }
+
+  // ── Refrigerantes ──
+  const resumoRefri = document.getElementById('resumoRefri');
+  if(!resumoRefri) return;
+
+  if(Object.keys(refriVendidos).length === 0){
+    resumoRefri.innerHTML = '<p style="color:#B58B67;font-size:.85rem;">Nenhum refrigerante vendido ainda</p>';
   } else {
-    resumoPag.innerHTML = Object.entries(porPagamento)
-      .sort((a,b) => b[1] - a[1])
-      .map(([forma, valor]) => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);">
-          <span style="font-size:.95rem;">💳 ${forma}</span>
-          <strong style="color:#FFB000;">${moeda(valor)}</strong>
+    const linhas = Object.entries(refriVendidos)
+      .sort((a,b) => b[1].qtd - a[1].qtd)
+      .map(([nome, dados]) => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);gap:8px;">
+          <span style="font-size:.92rem;flex:1;">🥤 ${nome}</span>
+          <span style="color:#B58B67;font-size:.88rem;white-space:nowrap;">x${dados.qtd}</span>
+          <strong style="color:#FFB000;white-space:nowrap;">${moeda(dados.total)}</strong>
         </div>
       `).join('');
+
+    resumoRefri.innerHTML = linhas + `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0 0;margin-top:4px;">
+        <strong style="color:#FFF6E8;">Total (${refriQtdGeral} unid.)</strong>
+        <strong style="color:#FF5A1F;font-size:1.1rem;">${moeda(refriTotalGeral)}</strong>
+      </div>
+    `;
   }
 }
 
