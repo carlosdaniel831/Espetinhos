@@ -401,13 +401,23 @@ function renderResumo(){
   let pagos = 0;
   let entregues = 0;
   const porPagamento = {};
+  const contagemRefri = {};
 
   Object.values(pedidos).forEach(p => {
     faturamento += p.total || 0;
     if(p.pago) pagos++;
     if(p.entregue) entregues++;
+    
     const forma = p.pagamento || 'Não informado';
     porPagamento[forma] = (porPagamento[forma] || 0) + (p.total || 0);
+
+    if(p.itens){
+      Object.entries(p.itens).forEach(([nomeItem, qtd]) => {
+        if(nomeItem.includes('🥤')){
+          contagemRefri[nomeItem] = (contagemRefri[nomeItem] || 0) + qtd;
+        }
+      });
+    }
   });
 
   document.getElementById('fatTotal').textContent = moeda(faturamento);
@@ -416,18 +426,33 @@ function renderResumo(){
   document.getElementById('entreguesTotal').textContent = entregues;
 
   const resumoPag = document.getElementById('resumoPagamento');
-  if(!resumoPag) return;
+  if(resumoPag){
+    if(Object.keys(porPagamento).length === 0){
+      resumoPag.innerHTML = `<p style="color:#B58B67;font-size:.85rem;">Nenhum dado ainda</p>`;
+    } else {
+      resumoPag.innerHTML = Object.entries(porPagamento).sort((a,b) => b[1] - a[1])
+        .map(([forma, valor]) => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+            <span style="font-size:.95rem;">💳 ${forma}</span>
+            <strong style="color:#FFB000;">${moeda(valor)}</strong>
+          </div>
+        `).join('');
+    }
+  }
 
-  if(Object.keys(porPagamento).length === 0){
-    resumoPag.innerHTML = `<p style="color:#B58B67;font-size:.85rem;">Nenhum dado ainda</p>`;
-  } else {
-    resumoPag.innerHTML = Object.entries(porPagamento).sort((a,b) => b[1] - a[1])
-      .map(([forma, valor]) => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);">
-          <span style="font-size:.95rem;">💳 ${forma}</span>
-          <strong style="color:#FFB000;">${moeda(valor)}</strong>
-        </div>
-      `).join('');
+  const resumoRefri = document.getElementById('resumoRefri');
+  if(resumoRefri){
+    if(Object.keys(contagemRefri).length === 0){
+      resumoRefri.innerHTML = `<p style="color:#B58B67;font-size:.85rem;">Nenhum refrigerante vendido ainda</p>`;
+    } else {
+      resumoRefri.innerHTML = Object.entries(contagemRefri).sort((a,b) => b[1] - a[1])
+        .map(([nomeRefri, qtd]) => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+            <span style="font-size:.95rem;">${nomeRefri}</span>
+            <strong style="color:#21C45D; background:rgba(33,196,93,.1); padding:4px 10px; border-radius:8px;">${qtd} un</strong>
+          </div>
+        `).join('');
+    }
   }
 }
 
